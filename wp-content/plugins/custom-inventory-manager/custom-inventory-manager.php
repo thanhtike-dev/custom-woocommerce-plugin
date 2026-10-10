@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: Custom Inventory Manager
  * Description: A private frontend inventory management dashboard powered by WooCommerce.
@@ -8,32 +9,36 @@
  * Text Domain: custom-inventory-manager
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
-define( 'CIM_VERSION', '1.0.0' );
-define( 'CIM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'CIM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define('CIM_VERSION', '1.0.0');
+define('CIM_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('CIM_PLUGIN_URL', plugin_dir_url(__FILE__));
 
 /**
  * Initialize the plugin.
  */
-function cim_init() {
-    if ( ! class_exists( 'WooCommerce' ) ) {
-        add_action( 'admin_notices', 'cim_woocommerce_notice' );
+function cim_init()
+{
+    if (! class_exists('WooCommerce')) {
+        add_action('admin_notices', 'cim_woocommerce_notice');
         return;
     }
 
-    // Our inventory functionality will be added here.
+    require_once CIM_PLUGIN_DIR . 'includes/class-inventory-dashboard.php';
+
+    CIM_Inventory_Dashboard::init();
 }
-add_action( 'plugins_loaded', 'cim_init' );
+add_action('plugins_loaded', 'cim_init');
 
 /**
  * Show a warning if WooCommerce is inactive.
  */
-function cim_woocommerce_notice() {
-    if ( ! current_user_can( 'activate_plugins' ) ) {
+function cim_woocommerce_notice()
+{
+    if (! current_user_can('activate_plugins')) {
         return;
     }
 
@@ -44,3 +49,18 @@ function cim_woocommerce_notice() {
     );
     echo '</p></div>';
 }
+
+function cim_enqueue_dashboard_assets()
+{
+    if (! is_page('inventory')) {
+        return;
+    }
+
+    wp_enqueue_style(
+        'cim-inventory',
+        CIM_PLUGIN_URL . 'assets/css/inventory.css',
+        [],
+        CIM_VERSION
+    );
+}
+add_action('wp_enqueue_scripts', 'cim_enqueue_dashboard_assets');
