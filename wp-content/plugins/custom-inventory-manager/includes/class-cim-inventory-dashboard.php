@@ -35,6 +35,11 @@ class CIM_Inventory_Dashboard {
 			'custom_inventory_dashboard',
 			array( self::class, 'render' )
 		);
+
+		add_action(
+			'wp_ajax_cim_update_inventory',
+			array( self::class, 'update_inventory' )
+		);
 	}
 
 	/**
@@ -86,7 +91,6 @@ class CIM_Inventory_Dashboard {
 			'all',
 			'instock',
 			'outofstock',
-			'onbackorder',
 			'low_stock',
 		);
 
@@ -148,7 +152,6 @@ class CIM_Inventory_Dashboard {
 				array(
 					'instock',
 					'outofstock',
-					'onbackorder',
 				),
 				true
 			)
@@ -310,11 +313,10 @@ class CIM_Inventory_Dashboard {
 			<select name="inventory_stock">
 				<?php
 						$stock_options = array(
-							'all'         => 'All Stock',
-							'instock'     => 'In Stock',
-							'low_stock'   => 'Low Stock',
-							'outofstock'  => 'Out of Stock',
-							'onbackorder' => 'On Backorder',
+							'all'        => 'All Stock',
+							'instock'    => 'In Stock',
+							'low_stock'  => 'Low Stock',
+							'outofstock' => 'Out of Stock',
 						);
 
 						foreach ( $stock_options as $value => $label ) :
@@ -377,6 +379,7 @@ class CIM_Inventory_Dashboard {
 						<th>Category</th>
 						<th>Stock</th>
 						<th>Status</th>
+						<th>Actions</th>
 					</tr>
 				</thead>
 
@@ -385,7 +388,7 @@ class CIM_Inventory_Dashboard {
 					<?php if ( empty( $products ) ) : ?>
 
 					<tr>
-						<td colspan="5">
+						<td colspan="6">
 							No products found. Add your first product in WooCommerce.
 						</td>
 					</tr>
@@ -421,22 +424,22 @@ class CIM_Inventory_Dashboard {
 
 					<tr>
 						<td>
-							<strong>
+							<a href="<?php echo esc_url( $product->get_permalink() ); ?>">
 								<?php echo esc_html( $product->get_name() ); ?>
-							</strong>
+							</a>
 						</td>
 
 						<td>
 							<?php
-											$product_brands = get_the_terms(
-												$product_id,
-												'product_brand'
-											);
+								$product_brands = get_the_terms(
+									$product_id,
+									'product_brand'
+								);
 
 							if (
-												$product_brands &&
-												! is_wp_error( $product_brands )
-											) {
+									$product_brands &&
+									! is_wp_error( $product_brands )
+								) {
 								echo esc_html(
 									implode(
 										', ',
@@ -476,6 +479,15 @@ class CIM_Inventory_Dashboard {
 							<span class="cim-status">
 								<?php echo esc_html( $stock_label ); ?>
 							</span>
+						</td>
+						<td>
+							<button type="button" class="cim-edit-button"
+								data-product-id="<?php echo esc_attr( $product_id ); ?>"
+								data-product-name="<?php echo esc_attr( $product->get_name() ); ?>"
+								data-manage-stock="<?php echo $product->managing_stock() ? 'yes' : 'no'; ?>"
+								data-stock-quantity="<?php echo esc_attr( null === $quantity ? '' : $quantity ); ?>">
+								Edit
+							</button>
 						</td>
 					</tr>
 
@@ -586,10 +598,197 @@ class CIM_Inventory_Dashboard {
 
 	</section>
 
+	<!-- Modal to edit stock -->
+	<div id="cim-inventory-modal" class="cim-modal" aria-hidden="true">
+		<div class="cim-modal__overlay" data-cim-close></div>
+
+		<section class="cim-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="cim-modal-title">
+			<header class="cim-modal__header">
+				<h2 id="cim-modal-title">Edit Inventory</h2>
+
+				<button type="button" class="cim-modal__close" data-cim-close aria-label="Close modal">&times;</button>
+			</header>
+
+			<form id="cim-inventory-form">
+				<input type="hidden" name="action" value="cim_update_inventory">
+				<input type="hidden" name="nonce" value="">
+
+				<input type="hidden" name="product_id" value="">
+
+				<div class="cim-modal__body">
+					<p class="cim-modal__product-name"></p>
+
+					<label class="cim-checkbox">
+						<input type="checkbox" name="manage_stock" value="yes">
+						Manage stock for this product
+					</label>
+
+					<div class="cim-stock-fields">
+						<label for="cim-stock-quantity">
+							Stock quantity
+						</label>
+
+						<input id="cim-stock-quantity" type="number" name="stock_quantity" min="0" step="1"
+							inputmode="numeric">
+					</div>
+
+					<p class="cim-modal__message" role="status" aria-live="polite"></p>
+				</div>
+
+				<footer class="cim-modal__footer">
+					<button type="button" class="cim-button cim-button--secondary" data-cim-close>
+						Cancel
+					</button>
+
+					<button type="submit" class="cim-button cim-button--primary">
+						Save changes
+					</button>
+				</footer>
+			</form>
+		</section>
+	</div>
+
 </div>
 
 		<?php
 
 		return ob_get_clean();
+	}
+
+
+	/**
+	 * Update inventory settings for a simple product.
+	 *
+	 * @return void
+	 */
+	public static function update_inventory() {
+		check_ajax_referer( 'cim_update_inventory', 'nonce' );
+
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error(
+				array( 'message' => 'You do not have permission to update inventory.' ),
+				403
+			);
+		}
+
+		$product_id = isset( $_POST['product_id'] )
+			? absint( wp_unslash( $_POST['product_id'] ) )
+			: 0;
+
+		if (
+			! $product_id ||
+			! current_user_can( 'edit_post', $product_id )
+		) {
+			wp_send_json_error(
+				array( 'message' => 'You cannot edit this product.' ),
+				403
+			);
+		}
+
+		$product = wc_get_product( $product_id );
+
+		if ( ! $product || ! $product->is_type( 'simple' ) ) {
+			wp_send_json_error(
+				array( 'message' => 'The product is invalid or unsupported.' ),
+				400
+			);
+		}
+
+		$manage_stock = isset( $_POST['manage_stock'] )
+			? sanitize_key( wp_unslash( $_POST['manage_stock'] ) )
+			: '';
+
+		/*
+		 * Only validate and change quantity when stock management is enabled.
+		 * Disabling stock management leaves the stored quantity untouched.
+		 */
+		if ( 'yes' === $manage_stock ) {
+			if ( ! isset( $_POST['stock_quantity'] ) ) {
+				wp_send_json_error(
+					array( 'message' => 'Stock quantity is required.' ),
+					400
+				);
+			}
+
+			$raw_quantity = trim(
+				(string) wp_unslash( $_POST['stock_quantity'] )
+			);
+
+			$quantity = filter_var(
+				$raw_quantity,
+				FILTER_VALIDATE_INT
+			);
+
+			if ( false === $quantity || $quantity < 0 ) {
+				wp_send_json_error(
+					array(
+						'message' => 'Enter a valid, non-negative whole-number quantity.',
+					),
+					400
+				);
+			}
+		}
+
+		try {
+			$product->set_manage_stock( 'yes' === $manage_stock );
+
+			if ( 'yes' === $manage_stock ) {
+				$product->set_stock_quantity( $quantity );
+			}
+
+			$product->save();
+
+			/*
+			 * Reload the product so the response reflects WooCommerce's
+			 * saved stock status and quantity.
+			 */
+			$product = wc_get_product( $product_id );
+
+			if ( ! $product ) {
+				throw new Exception( 'Could not reload the saved product.' );
+			}
+		} catch ( Throwable $exception ) {
+			wp_send_json_error(
+				array(
+					'message' => 'The inventory update failed. Please try again.',
+				),
+				500
+			);
+		}
+
+		$saved_quantity      = $product->get_stock_quantity();
+		$low_stock_threshold = $product->get_low_stock_amount();
+
+		// Fall back to the store-wide threshold when no product-level
+		// threshold is configured.
+		if ( '' === $low_stock_threshold || null === $low_stock_threshold ) {
+			$low_stock_threshold = get_option(
+				'woocommerce_notify_low_stock_amount',
+				5
+			);
+		}
+
+		if ( ! $product->managing_stock() ) {
+			$stock_label = 'Not tracked';
+		} elseif ( ! $product->is_in_stock() ) {
+			$stock_label = 'Out of stock';
+		} elseif (
+			null !== $saved_quantity &&
+			$saved_quantity <= (int) $low_stock_threshold
+		) {
+			$stock_label = 'Low stock';
+		} else {
+			$stock_label = 'In stock';
+		}
+
+		wp_send_json_success(
+			array(
+				'product_id'     => $product_id,
+				'manage_stock'   => $product->managing_stock(),
+				'stock_quantity' => $saved_quantity,
+				'stock_label'    => $stock_label,
+				'message'        => 'Inventory updated successfully.',
+			)
+		);
 	}
 }

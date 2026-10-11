@@ -7,7 +7,7 @@
  * Requires Plugins: woocommerce
  * Text Domain: custom-inventory-manager
  *
- * @package TH THEME
+ * @package CustomInventoryManager
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -20,6 +20,8 @@ define( 'CIM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 /**
  * Initialize the plugin.
+ *
+ * @return void
  */
 function cim_init() {
 	if ( ! class_exists( 'WooCommerce' ) ) {
@@ -35,6 +37,8 @@ add_action( 'plugins_loaded', 'cim_init' );
 
 /**
  * Show a warning if WooCommerce is inactive.
+ *
+ * @return void
  */
 function cim_woocommerce_notice() {
 	if ( ! current_user_can( 'activate_plugins' ) ) {
@@ -49,6 +53,11 @@ function cim_woocommerce_notice() {
 	echo '</p></div>';
 }
 
+/**
+ * Enqueue inventory dashboard assets.
+ *
+ * @return void
+ */
 function cim_enqueue_dashboard_assets() {
 	if ( ! is_page( 'inventory' ) ) {
 		return;
@@ -56,9 +65,26 @@ function cim_enqueue_dashboard_assets() {
 
 	wp_enqueue_style(
 		'cim-inventory',
-		CIM_PLUGIN_URL . 'assets/css/inventory.css',
+		CIM_PLUGIN_URL . 'assets/css/cim-inventory.css',
 		array(),
 		CIM_VERSION
+	);
+
+	wp_enqueue_script(
+		'cim-inventory',
+		CIM_PLUGIN_URL . 'assets/js/cim-inventory.js',
+		array(),
+		CIM_VERSION,
+		true
+	);
+
+	wp_localize_script(
+		'cim-inventory',
+		'cimInventory',
+		array(
+			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+			'nonce'   => wp_create_nonce( 'cim_update_inventory' ),
+		)
 	);
 }
 add_action( 'wp_enqueue_scripts', 'cim_enqueue_dashboard_assets' );
