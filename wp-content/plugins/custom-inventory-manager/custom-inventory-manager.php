@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Plugin Name: Custom Inventory Manager
  * Description: A private frontend inventory management dashboard powered by WooCommerce.
@@ -7,6 +6,8 @@
  * Author: Than Htike
  * Requires Plugins: woocommerce
  * Text Domain: custom-inventory-manager
+ *
+ * @package TH THEME
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
