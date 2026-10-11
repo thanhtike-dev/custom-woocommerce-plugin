@@ -1,0 +1,267 @@
+{
+  "editor.fontSize": 16,
+  "[javascript]": {
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[vue]": {
+    "editor.tabSize": 2
+  },
+  "[blade]": {
+    "editor.tabSize": 4,
+    "editor.autoClosingBrackets": "always",
+    "editor.defaultFormatter": "onecentlin.laravel-blade"
+  },
+  "[json]": {
+    "editor.tabSize": 4,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "phpSniffer.standard": "WordPress-Core",
+  "phpSniffer.executablesFolder": "/Users/thanhtike/.composer/vendor/bin",
+  "phpSniffer.autoDetect": false,
+  // "phpcs.enable": true,
+  // "phpcs.standard": "WordPress",
+  // "phpcs.ignore": "config, webroot",
+  "[php]": {
+    "editor.defaultFormatter": "wongjn.php-sniffer",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.insertSpaces": false
+    // "editor.defaultFormatter": "bmewburn.vscode-intelephense-client",
+    // "editor.defaultFormatter": "DEVSENSE.phptools-vscode",
+  },
+  "[astro]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.defaultFormatter": "astro-build.astro-vscode"
+  },
+  "css.validate": false,
+  "files.associations": {
+    "*.inc": "php",
+    "*.txt": "xml",
+    "*.php": "php",
+    "*.svg": "xml"
+  },
+  "explorer.confirmDelete": false,
+  "editor.minimap.enabled": true,
+  "vsicons.dontShowNewVersionMessage": true,
+  "workbench.iconTheme": "material-icon-theme",
+  "files.autoSave": "onFocusChange",
+  "editor.renderWhitespace": "all",
+  "[html]": {
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[css]": {
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "beautify.config": {
+    "indent_size": 2,
+    "indent_char": " ",
+    "css": {
+      "indent_size": 2
+    }
+  },
+  "postcssSorting.config": {
+    "order": [
+      "custom-properties",
+      "dollar-variables",
+      "declarations",
+      "at-rules",
+      "rules"
+    ],
+    "properties-order": [
+      "display",
+      "position",
+      "top",
+      "right",
+      "bottom",
+      "left",
+      "float",
+      "clear",
+      "width",
+      "min-width",
+      "max-width",
+      "height",
+      "min-height",
+      "max-height",
+      "list-style",
+      "line-height",
+      "vertical-align",
+      "overflow",
+      "clip",
+      "visibility",
+      "margin",
+      "margin-top",
+      "margin-right",
+      "margin-bottom",
+      "margin-left",
+      "padding",
+      "padding-top",
+      "padding-right",
+      "padding-bottom",
+      "padding-left",
+      "border",
+      "border-radius",
+      "border-color",
+      "box-shadow",
+      "box-sizing",
+      "transform",
+      "background",
+      "color",
+      "font",
+      "font-family",
+      "font-size",
+      "font-weight",
+      "text-indent",
+      "text-decoration",
+      "text-align",
+      "vertical-align",
+      "white-space",
+      "content",
+      "z-index"
+    ]
+  },
+  "liveServer.settings.donotShowInfoMsg": true,
+  "diffEditor.wordWrap": "on",
+  "editor.wordWrap": "on",
+  "terminal.integrated.defaultProfile.windows": "Git Bash",
+  "CodeGPT.model": "text-davinci-003",
+  "CodeGPT.maxTokens": 500,
+  // Your favorite colors
+  "peacock.favoriteColors": [
+    {
+      "name": "Angular Red",
+      "value": "#dd0531"
+    },
+    {
+      "name": "Azure Blue",
+      "value": "#007fff"
+    },
+    {
+      "name": "JavaScript Yellow",
+      "value": "#f9e64f"
+    },
+    {
+      "name": "Mandalorian Blue",
+      "value": "#1857a4"
+    },
+    {
+      "name": "Node Green",
+      "value": "#215732"
+    },
+    {
+      "name": "React Blue",
+      "value": "#61dafb"
+    },
+    {
+      "name": "Something Different",
+      "value": "#832561"
+    },
+    {
+      "name": "Svelte Orange",
+      "value": "#ff3d00"
+    },
+    {
+      "name": "Vue Green",
+      "value": "#42b883"
+    },
+    {
+      "name": "Q-Business",
+      "value": "#337AB7"
+    },
+    {
+      "name": "Cerezo",
+      "value": "#da005c"
+    }
+  ],
+  "explorer.confirmDragAndDrop": false,
+  "git.openRepositoryInParentFolders": "never",
+  "cSpell.enabled": false,
+  "security.workspace.trust.untrustedFiles": "open",
+  "tailwindCSS.experimental.classRegex": [],
+  "editor.renderControlCharacters": false,
+  "window.commandCenter": true,
+  "cssrem.vwDesign": 768,
+  "diffEditor.ignoreTrimWhitespace": false,
+  "tailwind-fold.autoFold": false,
+  "blade.format.enable": true,
+  "diffEditor.hideUnchangedRegions.enabled": true,
+  "explorer.compactFolders": false,
+  "workbench.colorTheme": "One Dark Pro",
+  "editor.fontFamily": "'Cascadia Code NF', Menlo, Monaco, 'Courier New', monospace",
+  "editor.fontLigatures": true,
+  "color-highlight.markRuler": false,
+  "color-highlight.matchWords": true,
+  "prettier.singleQuote": true,
+  "editor.fontVariations": false,
+  "[scss]": {
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "beautify.language": {
+    "js": {
+      "type": ["javascript", "json", "jsonc"],
+      "filename": [".jshintrc", ".jsbeautifyrc"]
+    },
+    "css": ["css", "less", "scss"],
+    "html": ["htm", "html"]
+  },
+  "editor.linkedEditing": true,
+  "prettier.tabWidth": 2,
+  "php.inlayHints.parameters.enabled": false,
+  "workbench.colorCustomizations": {
+    "list.activeSelectionForeground": "#83ff83", // Active selection text color
+    "list.inactiveSelectionForeground": "#CCCCCC", // Inactive selection text color
+    "list.hoverForeground": "#d6ff7d", // Text color on hover
+    "list.dropBackground": "#555555", // Background when dragging
+    "tree.indentGuidesStroke": "#7ed9e9", // Color of indent guides in explorer
+    //   "sideBar.background": "#282828",              // Sidebar background color
+    //   "sideBar.foreground": "#B8B8B8",              // Sidebar text color
+    "sideBarSectionHeader.background": "#3a3a3a", // Sidebar section header background
+    "sideBarSectionHeader.foreground": "#EDEDED", // Sidebar section header text color
+    "list.focusOutline": "#c6c4d7", // Highlight around focused item
+    "list.highlightForeground": "#f1ff99" // Highlighted text color in search
+  },
+  "php.format.codeStyle": "WordPress",
+  "database-client.autoSync": true,
+  "workbench.startupEditor": "none",
+  "editor.inlineSuggest.suppressSuggestions": true,
+  "cody.codeActions.enabled": true,
+  "amazonQ.importRecommendationForInlineCodeSuggestions": false,
+  "amazonQ.showInlineCodeSuggestionsWithCodeReferences": false,
+  "workbench.editor.enablePreview": false,
+  "workbench.editorAssociations": {
+    "*.copilotmd": "vscode.markdown.preview.editor",
+    "*.svg": "default"
+  },
+  "workbench.editor.languageDetection": false,
+  "github.copilot.enable": {
+    "*": false,
+    "plaintext": false,
+    "markdown": false,
+    "scminput": false,
+    "php": true,
+    "javascript": false,
+    "css": false,
+    "astro": true
+  },
+  "cody.suggestions.mode": "auto-edit",
+  "githubPullRequests.pullBranch": "never",
+  "liveServer.settings.donotVerifyTags": true,
+  "editor.inlayHints.enabled": "off",
+  "amp.url": "https://ampcode.com/",
+  "cssrem.vwHover": false,
+  "editor.guides.bracketPairs": "active",
+  "editor.autoIndentOnPaste": true,
+  "px-to-vw.viewportWidth": 1536,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "eslint.run": "onSave",
+  "editor.indentSize": "tabSize",
+  "js/ts.updateImportsOnFileMove.enabled": "always",
+  // "editor.tabSize": 2,
+  "prettier.useTabs": false,
+  "editor.insertSpaces": false
+}
