@@ -1,0 +1,370 @@
+.cim-dashboard {
+  margin: 40px auto;
+  color: #1f2937;
+}
+
+.cim-header {
+  margin-bottom: 32px;
+}
+
+.cim-header h1 {
+  margin: 0 0 8px;
+  font-size: 30px;
+}
+
+.cim-header p {
+  color: #6b7280;
+  margin: 0;
+}
+
+.cim-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 36px;
+}
+
+.cim-stat-card {
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.cim-stat-card span {
+  display: block;
+  margin-bottom: 12px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.cim-stat-card strong {
+  font-size: 32px;
+}
+
+.cim-products {
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.cim-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.cim-section-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.cim-section-header span {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.cim-table-wrapper {
+  overflow-x: auto;
+}
+
+.cim-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.cim-table th,
+.cim-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.cim-table th {
+  background: #f9fafb;
+  color: #6b7280;
+  font-size: var(--fs-14);
+  text-transform: uppercase;
+}
+
+.cim-table td {
+  font-size: var(--fs-16);
+}
+
+.cim-status {
+  display: inline-block;
+  padding: 5px 10px;
+  background: #f3f4f6;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--clr-primary);
+}
+
+.cim-status.in-stock {
+  background-color: #acebc4;
+}
+
+.cim-status.low-stock {
+  background-color: #f5af59;
+}
+
+.cim-status.out-of-stock {
+  background-color: #fd9292;
+}
+
+@media (max-width: 700px) {
+  .cim-stats {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .cim-products {
+    padding: 12px;
+  }
+}
+
+.cim-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.cim-filters input,
+.cim-filters select {
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+}
+
+.cim-filters input[type='search'] {
+  flex: 1 1 240px;
+}
+
+.cim-filters button {
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--clr-secondary);
+  color: #fff;
+  cursor: pointer;
+}
+
+.cim-filters a {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px;
+}
+
+.cim-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.cim-pagination a {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.cim-pagination a[aria-current='page'] {
+  background: #1f2937;
+  color: #fff;
+}
+
+/* Inventory row actions. */
+.cim-edit-button,
+.cim-button {
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.cim-edit-button {
+  border-color: var(--clr-primary);
+}
+
+.cim-button--primary {
+  background-color: var(--clr-primary);
+  color: var(--clr-neutral-100);
+}
+
+.cim-button--secondary {
+  color: #374151;
+  background: #fff;
+}
+
+.cim-edit-button:hover {
+  background: var(--clr-primary);
+  color: var(--clr-neutral-100);
+}
+
+.cim-button--primary:hover {
+  background: var(--clr-secondary);
+}
+
+.cim-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+/* Modal overlay and dialog. */
+.cim-modal {
+  position: fixed;
+  z-index: 99999;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.cim-modal.is-open {
+  display: flex;
+}
+
+.cim-modal__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgb(15 23 42 / 55%);
+}
+
+.cim-modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgb(0 0 0 / 20%);
+}
+
+.cim-modal__header,
+.cim-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+}
+
+.cim-modal__header {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.cim-modal__header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.cim-modal__close {
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.cim-modal__body {
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+}
+
+.cim-modal__product-name {
+  margin: 0;
+  font-weight: 600;
+}
+
+.cim-modal__body label {
+  font-weight: 600;
+}
+
+.cim-modal__body input[type='number'],
+.cim-modal__body select {
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.cim-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cim-checkbox input {
+  width: 17px;
+  height: 17px;
+}
+
+.cim-stock-fields {
+  display: grid;
+  gap: 12px;
+}
+
+.cim-stock-fields.is-disabled {
+  opacity: 0.55;
+}
+
+.cim-modal__message {
+  margin: 0;
+  font-size: 14px;
+}
+
+.cim-modal__message:empty {
+  display: none;
+}
+
+.cim-modal__message.is-success {
+  color: #15803d;
+}
+
+.cim-modal__message.is-error {
+  color: #b91c1c;
+}
+
+.cim-modal__footer {
+  justify-content: flex-end;
+  border-top: 1px solid #e5e7eb;
+}
+
+body.cim-modal-open {
+  overflow: hidden;
+}
+
+@media (max-width: 480px) {
+  .cim-modal {
+    padding: 12px;
+  }
+
+  .cim-modal__header,
+  .cim-modal__footer {
+    padding: 14px;
+  }
+
+  .cim-modal__body {
+    padding: 16px;
+  }
+}

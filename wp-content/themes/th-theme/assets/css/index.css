@@ -1,0 +1,61 @@
+@charset "utf-8";
+
+#countdown-box {
+	text-align: center;
+	padding: 1em;
+	background: #f9f9f9;
+	border: 2px solid #007acc;
+	border-radius: 12px;
+	max-width: 400px;
+	margin: 2em auto;
+	font-family: 'Arial', sans-serif;
+}
+
+.countdown-image {
+	max-width: 100%;
+	height: auto;
+}
+
+.countdown-text {
+	margin-top: 1em;
+	font-size: 1.2rem;
+	color: #333;
+}
+
+.sec-mv {
+	position: relative;
+	overflow: hidden;
+	padding-bottom: 30px;
+	background-color: var(--clr-neutral-100);
+}
+
+.sec-mv .mv-img-wrap {
+	aspect-ratio: 16 / 9;
+}
+
+.sec-mv .mv-link-wrap {
+	width: 100%;
+	padding: 10px 20px;
+	font-weight: 400;
+	gap: 10px;
+	justify-content: start;
+	background-color: var(--clr-neutral-100);
+}
+
+.sec-mv .mv-link-wrap .logo-holder {
+	flex-shrink: 0;
+}
+
+.sec-mv .mv-link-wrap .news-ttl {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.sec-mv .mv-link-wrap .arw {
+	margin-left: auto;
+}
+
+.player-card + .player-card {
+	margin-top: var(--space-20);
+}
