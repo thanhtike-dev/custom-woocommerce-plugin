@@ -1,9 +1,6 @@
 .cim-dashboard {
-  max-width: 1200px;
   margin: 40px auto;
-  padding: 24px;
   color: #1f2937;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .cim-header {
@@ -90,12 +87,12 @@
 .cim-table th {
   background: #f9fafb;
   color: #6b7280;
-  font-size: 12px;
+  font-size: var(--fs-14);
   text-transform: uppercase;
 }
 
 .cim-table td {
-  font-size: 14px;
+  font-size: var(--fs-16);
 }
 
 .cim-status {
@@ -104,13 +101,23 @@
   background: #f3f4f6;
   border-radius: 20px;
   font-size: 12px;
+  font-weight: 500;
+  color: var(--clr-primary);
+}
+
+.cim-status.in-stock {
+  background-color: #acebc4;
+}
+
+.cim-status.low-stock {
+  background-color: #f5af59;
+}
+
+.cim-status.out-of-stock {
+  background-color: #fd9292;
 }
 
 @media (max-width: 700px) {
-  .cim-dashboard {
-    padding: 16px;
-  }
-
   .cim-stats {
     grid-template-columns: 1fr;
     gap: 12px;
@@ -146,7 +153,7 @@
   padding: 10px 18px;
   border: 0;
   border-radius: 8px;
-  background: #1f2937;
+  background: var(--clr-secondary);
   color: #fff;
   cursor: pointer;
 }
@@ -180,19 +187,23 @@
 /* Inventory row actions. */
 .cim-edit-button,
 .cim-button {
-  padding: 9px 14px;
+  padding: 6px 12px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font: inherit;
   font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.3s;
 }
 
-.cim-edit-button,
+.cim-edit-button {
+  border-color: var(--clr-primary);
+}
+
 .cim-button--primary {
-  color: #fff;
-  background: #1d4ed8;
-  border-color: #1d4ed8;
+  background-color: var(--clr-primary);
+  color: var(--clr-neutral-100);
 }
 
 .cim-button--secondary {
@@ -200,9 +211,13 @@
   background: #fff;
 }
 
-.cim-edit-button:hover,
+.cim-edit-button:hover {
+  background: var(--clr-primary);
+  color: var(--clr-neutral-100);
+}
+
 .cim-button--primary:hover {
-  background: #1e40af;
+  background: var(--clr-secondary);
 }
 
 .cim-button:disabled {

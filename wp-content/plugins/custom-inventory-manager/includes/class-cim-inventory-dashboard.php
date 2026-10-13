@@ -43,12 +43,53 @@ class CIM_Inventory_Dashboard {
 	}
 
 	/**
+	 * Get the effective low-stock threshold for a product.
+	 *
+	 * @param WC_Product $product Product object.
+	 * @return int
+	 */
+	private static function get_low_stock_threshold( $product ) {
+		$threshold = $product->get_low_stock_amount();
+
+		if ( '' === $threshold || null === $threshold ) {
+			$threshold = get_option(
+				'woocommerce_notify_low_stock_amount',
+				2
+			);
+		}
+
+		return max( 0, (int) $threshold );
+	}
+
+	/**
+	 * Determine whether a product is low in stock.
+	 *
+	 * @param WC_Product $product Product object.
+	 * @return bool
+	 */
+	private static function is_low_stock( $product ) {
+		if (
+			! $product->managing_stock() ||
+			! $product->is_in_stock()
+		) {
+			return false;
+		}
+
+		$quantity = $product->get_stock_quantity();
+
+		if ( null === $quantity ) {
+			return false;
+		}
+
+		return $quantity <= self::get_low_stock_threshold( $product );
+	}
+
+	/**
 	 * Render the inventory dashboard.
 	 *
 	 * @return string
 	 */
 	public static function render() {
-		// Require WooCommerce inventory management permissions.
 		// phpcs:ignore WordPress.WP.Capabilities.Unknown -- WooCommerce defines manage_woocommerce.
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			return '<p>You do not have permission to access inventory management.</p>';
@@ -58,10 +99,6 @@ class CIM_Inventory_Dashboard {
 			return '<p>WooCommerce is not available.</p>';
 		}
 
-		/*
-		 * These GET parameters only filter displayed results.
-		 * They do not create, update, or delete inventory data.
-		 */
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended
 
 		$page = max(
@@ -149,10 +186,7 @@ class CIM_Inventory_Dashboard {
 		if (
 			in_array(
 				$stock_filter,
-				array(
-					'instock',
-					'outofstock',
-				),
+				array( 'instock', 'outofstock' ),
 				true
 			)
 		) {
@@ -161,7 +195,7 @@ class CIM_Inventory_Dashboard {
 
 		/*
 		 * Low-stock filtering requires custom processing because
-		 * WooCommerce does not provide a universal low-stock query.
+		 * the effective threshold may differ between products.
 		 */
 		if ( 'low_stock' === $stock_filter ) {
 			$low_stock_query_args = $query_args;
@@ -176,18 +210,7 @@ class CIM_Inventory_Dashboard {
 				array_filter(
 					$all_products,
 					static function ( $product ) {
-						if (
-							! $product->managing_stock() ||
-							! $product->is_in_stock()
-						) {
-							return false;
-						}
-
-						$quantity  = $product->get_stock_quantity();
-						$threshold = $product->get_low_stock_amount();
-
-						return null !== $quantity
-							&& $quantity <= $threshold;
+						return self::is_low_stock( $product );
 					}
 				)
 			);
@@ -216,8 +239,7 @@ class CIM_Inventory_Dashboard {
 		$total_products = $total;
 
 		/*
-		 * Calculate inventory summary counts independently
-		 * of the currently selected filters.
+		 * Calculate summary counts independently of filters.
 		 */
 		$summary_products = wc_get_products(
 			array(
@@ -236,14 +258,12 @@ class CIM_Inventory_Dashboard {
 				continue;
 			}
 
-			$quantity = $product->get_stock_quantity();
-
 			if ( ! $product->is_in_stock() ) {
 				++$out_of_stock;
-			} elseif (
-				null !== $quantity &&
-				$quantity <= $product->get_low_stock_amount()
-			) {
+				continue;
+			}
+
+			if ( self::is_low_stock( $product ) ) {
 				++$low_stock;
 			}
 		}
@@ -252,409 +272,445 @@ class CIM_Inventory_Dashboard {
 		?>
 
 <div class="cim-dashboard">
+	<div class="sec-wrap">
 
-	<header class="cim-header">
-		<div>
-			<h1>Inventory Manager</h1>
-			<p>Manage your products and stock in one place.</p>
-		</div>
-	</header>
+		<header class="cim-header">
+			<div>
+				<h1>Inventory Manager</h1>
+				<p>Manage your products and stock in one place.</p>
+			</div>
+		</header>
 
-	<section class="cim-stats">
+		<section class="cim-stats">
+			<div class="cim-stat-card">
+				<span>Total Products</span>
+				<strong><?php echo esc_html( $store_total_products ); ?></strong>
+			</div>
 
-		<div class="cim-stat-card">
-			<span>Total Products</span>
-			<strong><?php echo esc_html( $store_total_products ); ?></strong>
-		</div>
+			<div class="cim-stat-card">
+				<span>Low Stock</span>
+				<strong><?php echo esc_html( $low_stock ); ?></strong>
+			</div>
 
-		<div class="cim-stat-card">
-			<span>Low Stock</span>
-			<strong><?php echo esc_html( $low_stock ); ?></strong>
-		</div>
+			<div class="cim-stat-card">
+				<span>Out of Stock</span>
+				<strong><?php echo esc_html( $out_of_stock ); ?></strong>
+			</div>
+		</section>
 
-		<div class="cim-stat-card">
-			<span>Out of Stock</span>
-			<strong><?php echo esc_html( $out_of_stock ); ?></strong>
-		</div>
+		<section class="cim-products">
 
-	</section>
+			<form method="get" class="cim-filters">
 
-	<section class="cim-products">
+				<input type="search" name="inventory_search" placeholder="Search by product name..."
+					value="<?php echo esc_attr( $search ); ?>">
 
-		<form method="get" class="cim-filters">
+				<select name="inventory_category">
+					<option value="0">TV Size</option>
 
-			<input type="search" name="inventory_search" placeholder="Search by product name..."
-				value="<?php echo esc_attr( $search ); ?>">
+					<?php
+					$categories = get_terms(
+						array(
+							'taxonomy'   => 'product_cat',
+							'hide_empty' => false,
+						)
+					);
 
-			<select name="inventory_category">
-				<option value="0">All Categories</option>
-
-				<?php
-						$categories = get_terms(
-							array(
-								'taxonomy'   => 'product_cat',
-								'hide_empty' => false,
-							)
-						);
-
-				if ( ! is_wp_error( $categories ) ) :
-					foreach ( $categories as $category ) :
-						?>
-				<option value="<?php echo esc_attr( $category->term_id ); ?>"
+					if ( ! is_wp_error( $categories ) ) :
+						foreach ( $categories as $category ) :
+							?>
+					<option value="<?php echo esc_attr( $category->term_id ); ?>"
 						<?php selected( $category_id, $category->term_id ); ?>>
 						<?php echo esc_html( $category->name ); ?>
-				</option>
-						<?php
-					endforeach;
-						endif;
-				?>
-			</select>
-
-			<select name="inventory_stock">
-				<?php
-						$stock_options = array(
-							'all'        => 'All Stock',
-							'instock'    => 'In Stock',
-							'low_stock'  => 'Low Stock',
-							'outofstock' => 'Out of Stock',
-						);
-
-						foreach ( $stock_options as $value => $label ) :
-							?>
-				<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $stock_filter, $value ); ?>>
-							<?php echo esc_html( $label ); ?>
-				</option>
-							<?php
+					</option>
+					<?php
 						endforeach;
+					endif;
+					?>
+				</select>
+
+				<select name="inventory_stock">
+					<?php
+					$stock_options = array(
+						'all'        => 'All Stock',
+						'instock'    => 'In Stock',
+						'low_stock'  => 'Low Stock',
+						'outofstock' => 'Out of Stock',
+					);
+
+					foreach ( $stock_options as $value => $label ) :
 						?>
-			</select>
+					<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $stock_filter, $value ); ?>>
+						<?php echo esc_html( $label ); ?>
+					</option>
+					<?php
+					endforeach;
+					?>
+				</select>
 
-			<select name="inventory_brand">
-				<option value="0">All Brands</option>
+				<select name="inventory_brand">
+					<option value="0">TV Brands</option>
 
-				<?php
-						$brands = get_terms(
-							array(
-								'taxonomy'   => 'product_brand',
-								'hide_empty' => false,
-							)
-						);
+					<?php
+					$brands = get_terms(
+						array(
+							'taxonomy'   => 'product_brand',
+							'hide_empty' => false,
+						)
+					);
 
-				if ( ! is_wp_error( $brands ) ) :
-					foreach ( $brands as $brand ) :
-						?>
-				<option value="<?php echo esc_attr( $brand->term_id ); ?>"
+					if ( ! is_wp_error( $brands ) ) :
+						foreach ( $brands as $brand ) :
+							?>
+					<option value="<?php echo esc_attr( $brand->term_id ); ?>"
 						<?php selected( $brand_id, $brand->term_id ); ?>>
 						<?php echo esc_html( $brand->name ); ?>
-				</option>
-						<?php
-					endforeach;
-						endif;
-				?>
-			</select>
+					</option>
+					<?php
+						endforeach;
+					endif;
+					?>
+				</select>
 
-			<button type="submit">Search</button>
+				<button type="submit">Search</button>
 
-			<a href="<?php echo esc_url( get_permalink() ); ?>">
-				Clear filters
-			</a>
+				<a href="<?php echo esc_url( get_permalink() ); ?>">
+					Clear filters
+				</a>
 
-		</form>
+			</form>
 
-		<div class="cim-section-header">
-			<h2>Products</h2>
-			<span>
-				<?php echo esc_html( $total_products ); ?> products
-			</span>
-		</div>
+			<div class="cim-section-header">
+				<h2>Products</h2>
+				<span><?php echo esc_html( $total_products ); ?> products</span>
+			</div>
 
-		<div class="cim-table-wrapper">
+			<div class="cim-table-wrapper">
 
-			<table class="cim-table">
+				<table class="cim-table">
+					<thead>
+						<tr>
+							<th>Product</th>
+							<th>Brands</th>
+							<th>TV Size</th>
+							<th>LED</th>
+							<th>Type</th>
+							<th>Voltage</th>
+							<th>Stock</th>
+							<th>Status</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
 
-				<thead>
-					<tr>
-						<th>Product</th>
-						<th>Brands</th>
-						<th>Category</th>
-						<th>Stock</th>
-						<th>Status</th>
-						<th>Actions</th>
-					</tr>
-				</thead>
+					<tbody>
 
-				<tbody>
+						<?php if ( empty( $products ) ) : ?>
 
-					<?php if ( empty( $products ) ) : ?>
+						<tr>
+							<td colspan="9">
+								No products found. Add your first product in WooCommerce.
+							</td>
+						</tr>
 
-					<tr>
-						<td colspan="6">
-							No products found. Add your first product in WooCommerce.
-						</td>
-					</tr>
-
-					<?php else : ?>
+						<?php else : ?>
 
 						<?php foreach ( $products as $product ) : ?>
-							<?php
-									$product_id = $product->get_id();
 
-									$categories = wc_get_product_category_list(
-										$product_id,
-										', ',
-										'',
-										''
-									);
+						<?php
+								$product_id = $product->get_id();
 
-									$quantity = $product->get_stock_quantity();
+								$categories = wc_get_product_category_list(
+									$product_id,
+									', ',
+									'',
+									''
+								);
 
-							if ( ! $product->managing_stock() ) {
-								$stock_label = 'Not tracked';
-							} elseif ( ! $product->is_in_stock() ) {
-								$stock_label = 'Out of stock';
-							} elseif (
-										null !== $quantity &&
-										$quantity <= $product->get_low_stock_amount()
-									) {
-								$stock_label = 'Low stock';
-							} else {
-								$stock_label = 'In stock';
-							}
-							?>
+								$led_count = $product->get_attribute( 'pa_led' );
+								$type_sets = $product->get_attribute( 'pa_sets' );
+								$voltage   = $product->get_attribute( 'pa_voltage' );
+								$quantity  = $product->get_stock_quantity();
 
-					<tr>
-						<td>
-							<a href="<?php echo esc_url( $product->get_permalink() ); ?>">
-								<?php echo esc_html( $product->get_name() ); ?>
-							</a>
-						</td>
+								if ( ! $product->managing_stock() ) {
+									$stock_label       = 'Not tracked';
+									$stock_label_class = 'not-tracked';
+								} elseif (
+									! $product->is_in_stock() ||
+									( null !== $quantity && $quantity <= 0 )
+								) {
+									$stock_label       = 'Out of stock';
+									$stock_label_class = 'out-of-stock';
+								} elseif ( self::is_low_stock( $product ) ) {
+									$stock_label       = 'Low stock';
+									$stock_label_class = 'low-stock';
+								} else {
+									$stock_label       = 'In stock';
+									$stock_label_class = 'in-stock';
+								}
 
-						<td>
-							<?php
 								$product_brands = get_the_terms(
 									$product_id,
 									'product_brand'
 								);
-
-							if (
-									$product_brands &&
-									! is_wp_error( $product_brands )
-								) {
-								echo esc_html(
-									implode(
-										', ',
-										wp_list_pluck(
-											$product_brands,
-											'name'
-										)
-									)
-								);
-							} else {
-								echo '&mdash;';
-							}
-							?>
-						</td>
-
-						<td>
-							<?php
-											echo wp_kses_post(
-												$categories
-													? $categories
-													: 'Uncategorized'
-											);
-							?>
-						</td>
-
-						<td>
-							<?php
-											echo esc_html(
-												$product->managing_stock()
-													? $quantity
-													: '—'
-											);
-							?>
-						</td>
-
-						<td>
-							<span class="cim-status">
-								<?php echo esc_html( $stock_label ); ?>
-							</span>
-						</td>
-						<td>
-							<button type="button" class="cim-edit-button"
-								data-product-id="<?php echo esc_attr( $product_id ); ?>"
-								data-product-name="<?php echo esc_attr( $product->get_name() ); ?>"
-								data-manage-stock="<?php echo $product->managing_stock() ? 'yes' : 'no'; ?>"
-								data-stock-quantity="<?php echo esc_attr( null === $quantity ? '' : $quantity ); ?>">
-								Edit
-							</button>
-						</td>
-					</tr>
-
-					<?php endforeach; ?>
-
-					<?php endif; ?>
-
-				</tbody>
-
-			</table>
-
-			<?php if ( $max_pages > 1 ) : ?>
-
-			<nav class="cim-pagination" aria-label="Inventory pages">
-
-				<?php
-							$pagination_args = array(
-								'inventory_search'   => $search,
-								'inventory_category' => $category_id,
-								'inventory_brand'    => $brand_id,
-								'inventory_stock'    => $stock_filter,
-							);
-
-							// Previous page.
-							if ( $page > 1 ) :
-								$prev_url = add_query_arg(
-									array_merge(
-										$pagination_args,
-										array(
-											'inventory_page' => $page - 1,
-										)
-									),
-									get_permalink()
-								);
 								?>
-				<a href="<?php echo esc_url( $prev_url ); ?>" class="cim-pagination__prev">
-					&laquo; Prev
-				</a>
-				<?php endif; ?>
 
-				<?php
-					// Display the first five pages and the last page.
-					$visible_pages = array_unique(
-						array_merge(
-							range( 1, min( 5, $max_pages ) ),
-							array( $max_pages )
-						)
-					);
+						<tr>
+							<td>
+								<a href="<?php echo esc_url( $product->get_permalink() ); ?>">
+									<?php echo esc_html( $product->get_name() ); ?>
+								</a>
+							</td>
 
-					$previous_page = 0;
+							<td>
+								<?php
+								if (
+											$product_brands &&
+											! is_wp_error( $product_brands )
+										) {
+									echo esc_html(
+										implode(
+											', ',
+											wp_list_pluck( $product_brands, 'name' )
+										)
+									);
+								} else {
+									echo '&mdash;';
+								}
+								?>
+							</td>
 
-				foreach ( $visible_pages as $i ) :
-					if ( $i <= $previous_page ) {
-						continue;
-					}
+							<td>
+								<?php
+										echo wp_kses_post(
+											$categories ? $categories : 'Uncategorized'
+										);
+								?>
+							</td>
 
-					if ( $i > $previous_page + 1 ) :
-						?>
-				<span class="cim-pagination__ellipsis" aria-hidden="true">
-					&hellip;
-				</span>
-						<?php
-					endif;
+							<td>
+								<?php
+										echo '' !== $led_count
+											? esc_html( $led_count )
+											: '&mdash;';
+								?>
+							</td>
 
-					$url = add_query_arg(
-						array_merge(
-							$pagination_args,
-							array(
-								'inventory_page' => $i,
-							)
-						),
-						get_permalink()
-					);
-					?>
+							<td>
+								<?php
+										echo '' !== $type_sets
+											? esc_html( $type_sets )
+											: '&mdash;';
+								?>
+							</td>
 
-				<a href="<?php echo esc_url( $url ); ?>" <?php echo $page === $i ? 'aria-current="page"' : ''; ?>>
-					<?php echo esc_html( $i ); ?>
-				</a>
+							<td>
+								<?php
+										echo '' !== $voltage
+											? esc_html( $voltage )
+											: '&mdash;';
+								?>
+							</td>
+
+							<td>
+								<?php
+										echo esc_html(
+											$product->managing_stock()
+												? $quantity
+												: '—'
+										);
+								?>
+							</td>
+
+							<td>
+								<span class="cim-status <?php echo esc_attr( $stock_label_class ); ?>">
+									<?php echo esc_html( $stock_label ); ?>
+								</span>
+							</td>
+
+							<td>
+								<button type="button" class="cim-edit-button"
+									data-product-id="<?php echo esc_attr( $product_id ); ?>"
+									data-product-name="<?php echo esc_attr( $product->get_name() ); ?>"
+									data-manage-stock="<?php echo $product->managing_stock() ? 'yes' : 'no'; ?>"
+									data-stock-quantity="<?php echo esc_attr( null === $quantity ? '' : $quantity ); ?>">
+									Edit
+								</button>
+							</td>
+						</tr>
+
+						<?php endforeach; ?>
+
+						<?php endif; ?>
+
+					</tbody>
+				</table>
+
+				<?php if ( $max_pages > 1 ) : ?>
+
+				<nav class="cim-pagination" aria-label="Inventory pages">
 
 					<?php
-					$previous_page = $i;
-							endforeach;
-				?>
+						$pagination_args = array(
+							'inventory_search'   => $search,
+							'inventory_category' => $category_id,
+							'inventory_brand'    => $brand_id,
+							'inventory_stock'    => $stock_filter,
+						);
 
-				<?php
-							// Next page.
-				if ( $page < $max_pages ) :
-					$next_url = add_query_arg(
-						array_merge(
-							$pagination_args,
-							array(
-								'inventory_page' => $page + 1,
+						// Previous page.
+						if ( $page > 1 ) :
+							$prev_url = add_query_arg(
+								array_merge(
+									$pagination_args,
+									array(
+										'inventory_page' => $page - 1,
+									)
+								),
+								get_permalink()
+							);
+							?>
+					<a href="<?php echo esc_url( $prev_url ); ?>" class="cim-pagination__prev">
+						&laquo;
+					</a>
+					<?php endif; ?>
+
+					<?php
+						/*
+						 * Show the first page, nearby pages, and last page.
+						 * Keep a two-page window around the current page.
+						 */
+						$visible_pages = array_unique(
+							array_merge(
+								array( 1 ),
+								range(
+									max( 2, $page - 2 ),
+									min( $max_pages - 1, $page + 2 )
+								),
+								array( $max_pages )
 							)
-						),
-						get_permalink()
-					);
+						);
+
+						sort( $visible_pages );
+
+						$previous_page = 0;
+
+					foreach ( $visible_pages as $i ) :
+						if ( $i <= $previous_page ) {
+							continue;
+						}
+
+						if ( $i > $previous_page + 1 ) :
+							?>
+					<span class="cim-pagination__ellipsis" aria-hidden="true">
+						&hellip;
+					</span>
+					<?php
+							endif;
+
+						$url = add_query_arg(
+							array_merge(
+								$pagination_args,
+								array(
+									'inventory_page' => $i,
+								)
+							),
+							get_permalink()
+						);
+						?>
+
+					<a href="<?php echo esc_url( $url ); ?>" <?php echo $page === $i ? 'aria-current="page"' : ''; ?>>
+						<?php echo esc_html( $i ); ?>
+					</a>
+
+					<?php
+						$previous_page = $i;
+						endforeach;
 					?>
-				<a href="<?php echo esc_url( $next_url ); ?>" class="cim-pagination__next">
-					Next &raquo;
-				</a>
+
+					<?php
+						// Next page.
+					if ( $page < $max_pages ) :
+						$next_url = add_query_arg(
+							array_merge(
+								$pagination_args,
+								array(
+									'inventory_page' => $page + 1,
+								)
+							),
+							get_permalink()
+						);
+						?>
+					<a href="<?php echo esc_url( $next_url ); ?>" class="cim-pagination__next">
+						&raquo;
+					</a>
+					<?php endif; ?>
+
+				</nav>
+
 				<?php endif; ?>
 
-			</nav>
+			</div>
 
-			<?php endif; ?>
+		</section>
 
-		</div>
+		<!-- Modal to edit stock -->
+		<div id="cim-inventory-modal" class="cim-modal" aria-hidden="true">
+			<div class="cim-modal__overlay" data-cim-close></div>
 
-	</section>
+			<section class="cim-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="cim-modal-title">
+				<header class="cim-modal__header">
+					<h2 id="cim-modal-title">Edit Inventory</h2>
 
-	<!-- Modal to edit stock -->
-	<div id="cim-inventory-modal" class="cim-modal" aria-hidden="true">
-		<div class="cim-modal__overlay" data-cim-close></div>
+					<button type="button" class="cim-modal__close" data-cim-close aria-label="Close modal">
+						&times;
+					</button>
+				</header>
 
-		<section class="cim-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="cim-modal-title">
-			<header class="cim-modal__header">
-				<h2 id="cim-modal-title">Edit Inventory</h2>
+				<form id="cim-inventory-form">
+					<input type="hidden" name="action" value="cim_update_inventory">
+					<input type="hidden" name="nonce" value="">
+					<input type="hidden" name="product_id" value="">
 
-				<button type="button" class="cim-modal__close" data-cim-close aria-label="Close modal">&times;</button>
-			</header>
+					<div class="cim-modal__body">
+						<p class="cim-modal__product-name"></p>
 
-			<form id="cim-inventory-form">
-				<input type="hidden" name="action" value="cim_update_inventory">
-				<input type="hidden" name="nonce" value="">
-
-				<input type="hidden" name="product_id" value="">
-
-				<div class="cim-modal__body">
-					<p class="cim-modal__product-name"></p>
-
-					<label class="cim-checkbox">
-						<input type="checkbox" name="manage_stock" value="yes">
-						Manage stock for this product
-					</label>
-
-					<div class="cim-stock-fields">
-						<label for="cim-stock-quantity">
-							Stock quantity
+						<label class="cim-checkbox">
+							<input type="checkbox" name="manage_stock" value="yes">
+							Manage stock for this product
 						</label>
 
-						<input id="cim-stock-quantity" type="number" name="stock_quantity" min="0" step="1"
-							inputmode="numeric">
+						<div class="cim-stock-fields">
+							<label for="cim-stock-quantity">
+								Stock quantity
+							</label>
+
+							<input id="cim-stock-quantity" type="number" name="stock_quantity" min="0" step="1"
+								inputmode="numeric">
+						</div>
+
+						<p class="cim-modal__message" role="status" aria-live="polite"></p>
 					</div>
 
-					<p class="cim-modal__message" role="status" aria-live="polite"></p>
-				</div>
+					<footer class="cim-modal__footer">
+						<button type="button" class="cim-button cim-button--secondary" data-cim-close>
+							Cancel
+						</button>
 
-				<footer class="cim-modal__footer">
-					<button type="button" class="cim-button cim-button--secondary" data-cim-close>
-						Cancel
-					</button>
+						<button type="submit" class="cim-button cim-button--primary">
+							Save changes
+						</button>
+					</footer>
+				</form>
+			</section>
+		</div>
 
-					<button type="submit" class="cim-button cim-button--primary">
-						Save changes
-					</button>
-				</footer>
-			</form>
-		</section>
 	</div>
-
 </div>
 
-		<?php
+<?php
 
 		return ob_get_clean();
 	}
-
 
 	/**
 	 * Update inventory settings for a simple product.
@@ -666,7 +722,9 @@ class CIM_Inventory_Dashboard {
 
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			wp_send_json_error(
-				array( 'message' => 'You do not have permission to update inventory.' ),
+				array(
+					'message' => 'You do not have permission to update inventory.',
+				),
 				403
 			);
 		}
@@ -680,7 +738,9 @@ class CIM_Inventory_Dashboard {
 			! current_user_can( 'edit_post', $product_id )
 		) {
 			wp_send_json_error(
-				array( 'message' => 'You cannot edit this product.' ),
+				array(
+					'message' => 'You cannot edit this product.',
+				),
 				403
 			);
 		}
@@ -689,7 +749,9 @@ class CIM_Inventory_Dashboard {
 
 		if ( ! $product || ! $product->is_type( 'simple' ) ) {
 			wp_send_json_error(
-				array( 'message' => 'The product is invalid or unsupported.' ),
+				array(
+					'message' => 'The product is invalid or unsupported.',
+				),
 				400
 			);
 		}
@@ -705,7 +767,9 @@ class CIM_Inventory_Dashboard {
 		if ( 'yes' === $manage_stock ) {
 			if ( ! isset( $_POST['stock_quantity'] ) ) {
 				wp_send_json_error(
-					array( 'message' => 'Stock quantity is required.' ),
+					array(
+						'message' => 'Stock quantity is required.',
+					),
 					400
 				);
 			}
@@ -738,10 +802,6 @@ class CIM_Inventory_Dashboard {
 
 			$product->save();
 
-			/*
-			 * Reload the product so the response reflects WooCommerce's
-			 * saved stock status and quantity.
-			 */
 			$product = wc_get_product( $product_id );
 
 			if ( ! $product ) {
@@ -756,26 +816,16 @@ class CIM_Inventory_Dashboard {
 			);
 		}
 
-		$saved_quantity      = $product->get_stock_quantity();
-		$low_stock_threshold = $product->get_low_stock_amount();
-
-		// Fall back to the store-wide threshold when no product-level
-		// threshold is configured.
-		if ( '' === $low_stock_threshold || null === $low_stock_threshold ) {
-			$low_stock_threshold = get_option(
-				'woocommerce_notify_low_stock_amount',
-				5
-			);
-		}
+		$saved_quantity = $product->get_stock_quantity();
 
 		if ( ! $product->managing_stock() ) {
 			$stock_label = 'Not tracked';
-		} elseif ( ! $product->is_in_stock() ) {
-			$stock_label = 'Out of stock';
 		} elseif (
-			null !== $saved_quantity &&
-			$saved_quantity <= (int) $low_stock_threshold
+			! $product->is_in_stock() ||
+			( null !== $saved_quantity && $saved_quantity <= 0 )
 		) {
+			$stock_label = 'Out of stock';
+		} elseif ( self::is_low_stock( $product ) ) {
 			$stock_label = 'Low stock';
 		} else {
 			$stock_label = 'In stock';

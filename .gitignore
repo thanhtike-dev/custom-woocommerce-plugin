@@ -24,7 +24,6 @@ wp-config.php
 
 # Example themes
 /wp-content/themes/twenty*/
-/wp-content/themes/th-theme
 
 # Example plugin
 /wp-content/plugins/hello.php
